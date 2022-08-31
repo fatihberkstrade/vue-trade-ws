@@ -16,6 +16,7 @@
       {{ (totalBuy / totalSell).toFixed(3) }} -
       {{ (thresholdTotalBuy / thresholdTotalSell).toFixed(3) }}
     </h3>
+    <h3>{{ minPrice }} - {{ maxPrice }}</h3>
     <h3 class="main-h3">
       <table>
         <tr
@@ -29,6 +30,7 @@
           <td>
             {{ trade.price.toFixed(2) }}
           </td>
+          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
       </table>
       <table>
@@ -39,6 +41,7 @@
           <td>
             {{ trade.price.toFixed(2) }}
           </td>
+          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
       </table>
       <table>
@@ -49,6 +52,7 @@
           <td>
             {{ trade.price.toFixed(2) }}
           </td>
+          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
       </table>
     </h3>
@@ -68,6 +72,8 @@ export default {
       totalSell: 0,
       totalBuy: 0,
       trades: [],
+      minPrice: 0,
+      maxPrice: 0,
       ws: undefined,
     };
   },
@@ -80,12 +86,21 @@ export default {
         index++;
         var data = JSON.parse(event.data);
         const price = Number(data.p);
+        if (that.minPrice === 0) {
+          that.minPrice = price;
+        }
+        if (price > that.maxPrice) {
+          that.maxPrice = price;
+        } else if (price < that.minPrice) {
+          that.minPrice = price;
+        }
         const amount = price * Number(data.q);
         var item = {
           amount: amount,
           isSell: data.m,
           price: price,
           index: index,
+          time: data.T,
         };
         that.trades.unshift(item);
         that.trades = that.trades.slice(0, 20);
