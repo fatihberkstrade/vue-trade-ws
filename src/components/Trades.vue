@@ -30,7 +30,6 @@
           <td>
             {{ trade.price.toFixed(2) }}
           </td>
-          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
       </table>
       <table>
@@ -148,18 +147,7 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+  margin: 10px 0 0;
 }
 
 .buy {
@@ -172,5 +160,6 @@ a {
 .main-h3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  align-items: baseline;
 }
 </style>
