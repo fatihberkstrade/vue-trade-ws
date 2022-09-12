@@ -1,12 +1,18 @@
 <template>
   <div class="hello">
-    <h3>
-      <input type="text" v-model="pair" />
-      <button @click="update">Update</button>
-    </h3>
+    <select v-model="selectedSymbol">
+      <option
+        :value="symbol"
+        @change="update"
+        v-for="symbol in symbols"
+        :key="symbol.symbol"
+      >
+        {{ symbol.pair }}
+      </option>
+    </select>
     <div class="header-div">
-      <h3>Buy: {{ totalBuy.toFixed(2) }}</h3>
-      <h3>Sells: {{ totalSell.toFixed(2) }}</h3>
+      <h3>Buy: {{ totalBuy.toFixed(pricePrecision) }}</h3>
+      <h3>Sells: {{ totalSell.toFixed(pricePrecision) }}</h3>
       <h3>
         Threshold Buy:
         {{ thresholdTotalBuy.toFixed(2) }}
@@ -23,37 +29,37 @@
     </div>
     <h3 class="main-div">
       <table>
+        <tr v-for="trade in thresholdBuys" :key="trade.index" class="buy">
+          <td>
+            {{ trade.amount.toFixed(pricePrecision) }}
+          </td>
+          <td>
+            {{ trade.price.toFixed(pricePrecision) }}
+          </td>
+          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
+        </tr>
+      </table>
+      <table>
         <tr
           v-for="trade in displayTrades"
           :key="trade.index"
           :class="{ sell: trade.isSell, buy: !trade.isSell }"
         >
           <td>
-            {{ trade.amount.toFixed(2) }}
+            {{ trade.amount.toFixed(pricePrecision) }}
           </td>
           <td>
-            {{ trade.price.toFixed(2) }}
+            {{ trade.price.toFixed(pricePrecision) }}
           </td>
-        </tr>
-      </table>
-      <table>
-        <tr v-for="trade in thresholdBuys" :key="trade.index" class="buy">
-          <td>
-            {{ trade.amount.toFixed(2) }}
-          </td>
-          <td>
-            {{ trade.price.toFixed(2) }}
-          </td>
-          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
       </table>
       <table>
         <tr v-for="trade in thresholdSells" :key="trade.index" class="sell">
           <td>
-            {{ trade.amount.toFixed(2) }}
+            {{ trade.amount.toFixed(pricePrecision) }}
           </td>
           <td>
-            {{ trade.price.toFixed(2) }}
+            {{ trade.price.toFixed(pricePrecision) }}
           </td>
           <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
         </tr>
@@ -64,6 +70,7 @@
 
 <script>
 import _ from "lodash";
+import axios from "axios";
 export default {
   name: "Trades",
   data() {
@@ -71,6 +78,9 @@ export default {
       pair: "btc",
       trades: [],
       ws: undefined,
+      symbols: [],
+      selectedSymbol: { pair: "btcusdt" },
+      pricePrecision: 2,
     };
   },
   computed: {
@@ -166,6 +176,11 @@ export default {
       }
     },
   },
+  watch: {
+    selectedSymbol(oldValue, newValue) {
+      this.update();
+    },
+  },
   methods: {
     processData() {
       const that = this;
@@ -188,10 +203,12 @@ export default {
       };
     },
     update() {
+      this.pricePrecision = this.selectedSymbol.pricePrecision;
+      console.log(this.selectedSymbol.pair.toLowerCase());
       this.trades = [];
       this.ws.close();
       this.ws = new WebSocket(
-        `wss://fstream.binance.com/ws/${this.pair}usdt@aggTrade`
+        `wss://fstream.binance.com/ws/${this.selectedSymbol.pair.toLowerCase()}@aggTrade`
       );
       this.processData();
     },
@@ -199,6 +216,15 @@ export default {
   mounted() {
     this.ws = new WebSocket("wss://fstream.binance.com/ws/btcusdt@aggTrade");
     this.processData();
+    axios
+      .get("https://fapi.binance.com/fapi/v1/exchangeInfo")
+      .then((response) => {
+        let symbols = _.filter(
+          response.data.symbols,
+          (e) => e.contractType === "PERPETUAL" && e.quoteAsset === "USDT"
+        );
+        this.symbols = _.orderBy(symbols, (e) => e.baseAsset);
+      });
   },
 };
 </script>
