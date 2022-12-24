@@ -1,31 +1,43 @@
 <template>
   <div class="hello">
-    <select v-model="selectedSymbol">
-      <option
-        :value="symbol"
-        @change="update"
-        v-for="symbol in symbols"
-        :key="symbol.symbol"
-      >
-        {{ symbol.pair }}
-      </option>
-    </select>
     <div class="header-div">
-      <h3>Buy: {{ totalBuy.toFixed(pricePrecision) }}</h3>
-      <h3>Sells: {{ totalSell.toFixed(pricePrecision) }}</h3>
-      <h3>
-        Threshold Buy:
+      <select v-model="selectedSymbol">
+        <option
+          :value="symbol"
+          @change="update"
+          v-for="symbol in symbols"
+          :key="symbol.symbol"
+        >
+          {{ symbol.pair }}
+        </option>
+      </select>
+      <input type="number" name="" id="" v-model="threshold" />
+      <div>
+        <button @click="descrease" style="width: 50%">-</button>
+        <button @click="increase" style="width: 50%">+</button>
+      </div>
+      <h3 class="buy">{{ totalBuy.toFixed(pricePrecision) }}</h3>
+      <div></div>
+      <h3 class="sell">{{ totalSell.toFixed(pricePrecision) }}</h3>
+      <h3 class="buy">
         {{ thresholdTotalBuy.toFixed(2) }}
       </h3>
-      <h3>
-        Threshold Sells:
+      <div></div>
+      <h3 class="sell">
         {{ thresholdTotalSell.toFixed(2) }}
       </h3>
-      <h3>
+      <div></div>
+      <h3 :class="{ buy: totalBuy > totalSell, sell: totalSell > totalBuy }">
         {{ (totalBuy / totalSell).toFixed(3) }} -
         {{ (thresholdTotalBuy / thresholdTotalSell).toFixed(3) }}
       </h3>
+      <div></div>
+      <div></div>
       <h3>{{ minPrice }} - {{ maxPrice }}</h3>
+      <div></div>
+      <div></div>
+      <h3>{{ lastPrice.toFixed(pricePrecision) }}</h3>
+      <div></div>
     </div>
     <h3 class="main-div">
       <table>
@@ -75,12 +87,18 @@ export default {
   name: "Trades",
   data() {
     return {
-      pair: "btc",
+      pair: "eh",
       trades: [],
       ws: undefined,
       symbols: [],
-      selectedSymbol: { pair: "btcusdt" },
+      selectedSymbol: { pair: "ETHUSDT", symbol: "ETHUSDT" },
+      symbol: { pair: "ETHUSDT", symbol: "ETHUSDT" },
       pricePrecision: 2,
+      minPrice: 1000000,
+      maxPrice: 0,
+      threshold: 50000,
+      thresholdValue: 50000,
+      lastPrice: 0,
     };
   },
   computed: {
@@ -104,7 +122,7 @@ export default {
     thresholdTotalBuy() {
       let total = 0;
       this.trades.forEach((element) => {
-        if (!element.isSell && element.amount >= 100000) {
+        if (!element.isSell && element.amount >= this.thresholdValue) {
           total += element.amount;
         }
       });
@@ -113,7 +131,7 @@ export default {
     thresholdTotalSell() {
       let total = 0;
       this.trades.forEach((element) => {
-        if (element.isSell && element.amount >= 100000) {
+        if (element.isSell && element.amount >= this.thresholdValue) {
           total += element.amount;
         }
       });
@@ -140,7 +158,7 @@ export default {
     thresholdBuys() {
       let returnArray = [];
       this.buys.forEach((trade) => {
-        if (trade.amount > 100000) {
+        if (trade.amount > this.thresholdValue) {
           returnArray.push(trade);
         }
       });
@@ -149,36 +167,26 @@ export default {
     thresholdSells() {
       let returnArray = [];
       this.sells.forEach((trade) => {
-        if (trade.amount > 100000) {
+        if (trade.amount > this.thresholdValue) {
           returnArray.push(trade);
         }
       });
       return returnArray;
     },
-    minPrice() {
-      var item = _.minBy(this.trades, function (item) {
-        return item.price;
-      });
-      if (item) {
-        return item.price;
-      } else {
-        return 0;
-      }
-    },
-    maxPrice() {
-      var item = _.maxBy(this.trades, function (item) {
-        return item.price;
-      });
-      if (item) {
-        return item.price;
-      } else {
-        return 0;
-      }
-    },
   },
   watch: {
-    selectedSymbol(oldValue, newValue) {
-      this.update();
+    selectedSymbol(newValue, oldValue) {
+      if (newValue) {
+        console.log(newValue);
+        if (newValue.pair === "BTCUSDT") {
+          this.threshold = 100000;
+        } else if (newValue.pair === "ETHUSDT") {
+          this.threshold = 50000;
+        } else {
+          this.threshold = 10000;
+        }
+        this.update();
+      }
     },
   },
   methods: {
@@ -192,20 +200,41 @@ export default {
         const price = Number(data.p);
         const amount = price * Number(data.q);
         var item = {
+          pair: data.s,
           amount: amount,
           isSell: data.m,
           price: price,
           index: index,
           time: data.T,
         };
+        if (price < that.minPrice) {
+          that.minPrice = price;
+        }
+        if (price > that.maxPrice) {
+          that.maxPrice = price;
+        }
         that.trades.unshift(item);
         that.trades = that.trades.slice(0, 1000);
+        that.lastPrice = price;
       };
     },
+    increase() {
+      this.threshold *= 2;
+      this.update();
+    },
+    descrease() {
+      this.threshold /= 2;
+      this.update();
+    },
     update() {
+      this.thresholdValue = this.threshold;
+      this.minPrice = 1000000;
+      this.maxPrice = 0;
       this.pricePrecision = this.selectedSymbol.pricePrecision;
-      console.log(this.selectedSymbol.pair.toLowerCase());
-      this.trades = [];
+      this.trades = _.filter(
+        this.trades,
+        (e) => e.pair === this.selectedSymbol.pair
+      );
       this.ws.close();
       this.ws = new WebSocket(
         `wss://fstream.binance.com/ws/${this.selectedSymbol.pair.toLowerCase()}@aggTrade`
@@ -214,7 +243,7 @@ export default {
     },
   },
   mounted() {
-    this.ws = new WebSocket("wss://fstream.binance.com/ws/btcusdt@aggTrade");
+    this.ws = new WebSocket("wss://fstream.binance.com/ws/ethusdt@aggTrade");
     this.processData();
     axios
       .get("https://fapi.binance.com/fapi/v1/exchangeInfo")
@@ -223,7 +252,17 @@ export default {
           response.data.symbols,
           (e) => e.contractType === "PERPETUAL" && e.quoteAsset === "USDT"
         );
-        this.symbols = _.orderBy(symbols, (e) => e.baseAsset);
+        symbols = _.orderBy(symbols, (e) => e.baseAsset);
+        debugger;
+        this.symbols.push(...symbols.filter((e) => e.pair === "BTCUSDT"));
+        this.symbols.push(...symbols.filter((e) => e.pair === "ETHUSDT"));
+        this.symbols.push(
+          ...symbols.filter((e) => e.pair !== "ETHUSDT" && e.pair !== "BTCUSDT")
+        );
+        this.selectedSymbol = _.filter(
+          this.symbols,
+          (e) => e.pair === "ETHUSDT"
+        )[0];
       });
   },
 };
@@ -249,10 +288,11 @@ h3 {
 }
 
 .header-div {
-  padding-left: 10vw;
-  padding-right: 10vw;
+  padding-left: 1vw;
+  padding-right: 1vw;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
+  grid-gap: 1vw;
 }
 </style>
