@@ -1,20 +1,20 @@
 <template>
-  <Trades />
+  <SignificantTrades />
 </template>
 
 <script>
-import Trades from "./components/Trades.vue";
+import SignificantTrades from "./components/SignificantTrades.vue";
 export default {
   name: "App",
   components: {
-    Trades: Trades,
+    SignificantTrades:SignificantTrades
   },
 };
 </script>
 
 <style>
 body {
-  background-color: #999;
+  background-color: #fff;
 }
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -27,6 +27,19 @@ body {
 @media screen and (min-width: 800px) {
   #app {
     font-size: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #999;
+    color: white;
+  }
+  button,
+  input,
+  select {
+    background-color: #999;
+    color: #ddd;
   }
 }
 </style>
