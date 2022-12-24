@@ -2,20 +2,36 @@
   <div class="hello">
     <h3 class="main-div">
       <table>
-        <tr v-for="trade in thresholdBuys" :key="trade.index" class="buy">
-          <td>
-            {{ trade.pair }}
-          </td>
-          <td>
-            {{ trade.amount.toFixed(pricePrecision) }}
-          </td>
-          <td>
-            {{ trade.price.toFixed(pricePrecision) }}
-          </td>
-          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
-        </tr>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Amount</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="trade in thresholdBuys" :key="trade.index" class="buy">
+            <td>
+              {{ trade.pair }}
+            </td>
+            <td>
+              {{ trade.amount.toFixed(pricePrecision) }}
+            </td>
+            <td>
+              {{ trade.price.toFixed(pricePrecision) }}
+            </td>
+            <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
+          </tr>
+        </tbody>
       </table>
       <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Amount</th>
+            <th>Price</th>
+          </tr>
+        </thead>
         <tr
           v-for="trade in displayTrades"
           :key="trade.index"
@@ -34,18 +50,27 @@
         </tr>
       </table>
       <table>
-        <tr v-for="trade in thresholdSells" :key="trade.index" class="sell">
-          <td>
-            {{ trade.pair }}
-          </td>
-          <td>
-            {{ trade.amount.toFixed(pricePrecision) }}
-          </td>
-          <td>
-            {{ trade.price.toFixed(pricePrecision) }}
-          </td>
-          <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
-        </tr>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Amount</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="trade in thresholdSells" :key="trade.index" class="sell">
+            <td>
+              {{ trade.pair }}
+            </td>
+            <td>
+              {{ trade.amount.toFixed(pricePrecision) }}
+            </td>
+            <td>
+              {{ trade.price.toFixed(pricePrecision) }}
+            </td>
+            <td>{{ ((Date.now() - trade.time) / 1000).toFixed(0) }}s</td>
+          </tr>
+        </tbody>
       </table>
     </h3>
   </div>
@@ -125,7 +150,7 @@ export default {
             const price = Number(data.p);
             const amount = price * Number(data.q);
             var item = {
-              pair: data.s,
+              pair: data.s.substring(0, data.s.length - 4),
               amount: amount,
               isSell: data.m,
               price: price,
